@@ -89,6 +89,56 @@ class CstBatchGenerator(tf.keras.utils.Sequence):
         self.batches = self.batches[bidx, :]
         self.machines = self.machines[bidx]
 
+# class CstRULRegressor(MLPRegressor):
+#     def __init__(self, input_shape, alpha, beta, maxrul, hidden=[]):
+#         super(CstRULRegressor, self).__init__(input_shape, hidden)
+#         # Weights
+#         self.alpha = alpha
+#         self.beta = beta
+#         self.maxrul = maxrul
+#         # Loss trackers
+#         self.ls_tracker = keras.metrics.Mean(name='loss')
+#         self.mse_tracker = keras.metrics.Mean(name='mse')
+#         self.cst_tracker = keras.metrics.Mean(name='cst')
+
+#     def train_step(self, data):
+#         x, info = data
+#         y_true = info[:, 0:1]
+#         flags = info[:, 1:2]
+#         idx = info[:, 2:3]
+
+#         with tf.GradientTape() as tape:
+#             # Obtain the predictions
+#             y_pred = self(x, training=True)
+#             # Compute the main loss
+#             mse = k.mean(flags * k.square(y_pred-y_true))
+#             # Compute the constraint regularization term
+#             delta_pred = y_pred[1:] - y_pred[:-1]
+#             delta_rul = -(idx[1:] - idx[:-1]) / self.maxrul
+#             deltadiff = delta_pred - delta_rul
+#             cst = k.mean(k.square(deltadiff))
+#             loss = self.alpha * mse + self.beta * cst
+
+#         # Compute gradients
+#         tr_vars = self.trainable_variables
+#         grads = tape.gradient(loss, tr_vars)
+
+#         # Update the network weights
+#         self.optimizer.apply_gradients(zip(grads, tr_vars))
+
+#         # Track the loss change
+#         self.ls_tracker.update_state(loss)
+#         self.mse_tracker.update_state(mse)
+#         self.cst_tracker.update_state(cst)
+#         return {'loss': self.ls_tracker.result(),
+#                 'mse': self.mse_tracker.result(),
+#                 'cst': self.cst_tracker.result()}
+
+#     @property
+#     def metrics(self):
+#         return [self.ls_tracker,
+#                 self.mse_tracker,
+#                 self.cst_tracker]
 class CstRULRegressor(MLPRegressor):
     def __init__(self, input_shape, alpha, beta, maxrul, hidden=[]):
         super(CstRULRegressor, self).__init__(input_shape, hidden)
@@ -101,23 +151,36 @@ class CstRULRegressor(MLPRegressor):
         self.mse_tracker = keras.metrics.Mean(name='mse')
         self.cst_tracker = keras.metrics.Mean(name='cst')
 
+    def __custom_loss(self, x, y_true, sign=1):
+        y_pred = self(x, training=True)
+        # Compute the main loss
+        mse = k.mean(self.flags * k.square(y_pred-y_true))
+        # Compute the constraint regularization term
+        delta_pred = y_pred[1:] - y_pred[:-1]
+        delta_rul = -(self.idx[1:] - self.idx[:-1]) / self.maxrul
+        deltadiff = delta_pred - delta_rul
+        cst = k.mean(k.square(deltadiff))
+        loss = self.alpha * mse + self.beta * cst
+        return sign*loss, mse, cst
+
     def train_step(self, data):
         x, info = data
         y_true = info[:, 0:1]
-        flags = info[:, 1:2]
-        idx = info[:, 2:3]
+        self.flags = info[:, 1:2]
+        self.idx = info[:, 2:3]
 
         with tf.GradientTape() as tape:
             # Obtain the predictions
-            y_pred = self(x, training=True)
-            # Compute the main loss
-            mse = k.mean(flags * k.square(y_pred-y_true))
-            # Compute the constraint regularization term
-            delta_pred = y_pred[1:] - y_pred[:-1]
-            delta_rul = -(idx[1:] - idx[:-1]) / self.maxrul
-            deltadiff = delta_pred - delta_rul
-            cst = k.mean(k.square(deltadiff))
-            loss = self.alpha * mse + self.beta * cst
+            loss, mse, cst = self.__custom_loss(x, y_true, sign=1)
+            # y_pred = self(x, training=True)
+            # # Compute the main loss
+            # mse = k.mean(flags * k.square(y_pred-y_true))
+            # # Compute the constraint regularization term
+            # delta_pred = y_pred[1:] - y_pred[:-1]
+            # delta_rul = -(idx[1:] - idx[:-1]) / self.maxrul
+            # deltadiff = delta_pred - delta_rul
+            # cst = k.mean(k.square(deltadiff))
+            # loss = self.alpha * mse + self.beta * cst
 
         # Compute gradients
         tr_vars = self.trainable_variables
@@ -141,41 +204,75 @@ class CstRULRegressor(MLPRegressor):
                 self.cst_tracker]
 
 class LagDualRULRegressor(MLPRegressor):
-    def __init__(self, input_shape, alpha, beta, maxrul, hidden=[]):
+    def __init__(self, input_shape, maxrul, hidden=[]):
         super(LagDualRULRegressor, self).__init__(input_shape, hidden)
         # Weights
-        self.alpha = alpha
-        self.beta = beta
+        # self.alpha = tf.Variable(0., name='alpha')
+        self.beta = tf.Variable(0., name='beta')
+        # self.alpha = 1
+        self.alpha = tf.Variable(0., name='alpha')
+        # self.beta = 5
         self.maxrul = maxrul
         # Loss trackers
         self.ls_tracker = keras.metrics.Mean(name='loss')
         self.mse_tracker = keras.metrics.Mean(name='mse')
         self.cst_tracker = keras.metrics.Mean(name='cst')
 
+    def __custom_loss(self, x, y_true, sign=1):
+
+        y_pred = self(x, training=True)
+        mse = k.mean(self.flags * k.square(y_pred-y_true))
+
+        # Compute the constraint regularization term
+        delta_pred = y_pred[1:] - y_pred[:-1]
+        delta_rul = -(self.idx[1:] - self.idx[:-1]) / self.maxrul
+        deltadiff = delta_pred - delta_rul
+        cst = k.maximum(0.0, deltadiff)
+        loss = self.alpha * mse + self.beta * cst
+        return sign*loss, mse, cst
+
     def train_step(self, data):
         x, info = data
         y_true = info[:, 0:1]
-        flags = info[:, 1:2]
-        idx = info[:, 2:3]
-
+        self.flags = info[:, 1:2]
+        self.idx = info[:, 2:3]
         with tf.GradientTape() as tape:
-            # Obtain the predictions
-            y_pred = self(x, training=True)
-            # Compute the main loss
-            mse = k.mean(flags * k.square(y_pred-y_true))
-            # Compute the constraint regularization term
-            delta_pred = y_pred[1:] - y_pred[:-1]
-            delta_rul = -(idx[1:] - idx[:-1]) / self.maxrul
-            deltadiff = delta_pred - delta_rul
-            cst = k.maximum(0.0, deltadiff)
-            loss = self.alpha * mse + self.beta * cst
+            loss, mse, cst = self.__custom_loss(x, y_true, sign=1)
 
-        # Compute gradients
+        # with tf.GradientTape() as tape:
+        #     # Obtain the predictions
+        #     y_pred = self(x, training=True)
+        #     # Compute the main loss
+        #     mse = k.mean(flags * k.square(y_pred-y_true))
+        #     # Compute the constraint regularization term
+        #     delta_pred = y_pred[1:] - y_pred[:-1]
+        #     delta_rul = -(idx[1:] - idx[:-1]) / self.maxrul
+        #     deltadiff = delta_pred - delta_rul
+        #     cst = k.maximum(0.0, deltadiff)
+        #     loss = self.alpha * mse + self.beta * cst
+
+        # Separate training variables
         tr_vars = self.trainable_variables
-        grads = tape.gradient(loss, tr_vars)
+        wgt_vars = tr_vars[:-2]
+        mul_vars = tr_vars[-2:]
+        rgl_vars = tr_vars[-2:-1]
 
-        # Update the network weights
-        self.optimizer.apply_gradients(zip(grads, tr_vars))
+        grads = tape.gradient(loss, wgt_vars)
+        self.optimizer.apply_gradients(zip(grads, wgt_vars))
+        
+        with tf.GradientTape() as tape:
+            loss, mse, cst = self.__custom_loss(x, y_true, sign=-1)
+
+        grads = tape.gradient(loss, rgl_vars)
+        self.optimizer.apply_gradients(zip(grads, mul_vars))
+        
+        
+        with tf.GradientTape() as tape:
+            loss, mse, cst = self.__custom_loss(x, y_true, sign=-1)
+        
+        grads = tape.gradient(loss, rgl_vars)
+        self.optimizer.apply_gradients(zip(grads, rgl_vars))
+
 
         # Track the loss change
         self.ls_tracker.update_state(loss)
