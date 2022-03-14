@@ -8,6 +8,35 @@ from tensorflow.keras import backend as k
 import utils.utils as utils
 import numpy as np
 
+
+
+class RULCostModel:
+    def __init__(self, maintenance_cost, safe_interval=0):
+        self.maintenance_cost = maintenance_cost
+        self.safe_interval = safe_interval
+
+    def cost(self, machine, pred, thr, return_margin=False):
+        # Merge machine and prediction data
+        tmp = np.array([machine, pred]).T
+        tmp = pd.DataFrame(data=tmp,
+                           columns=['machine', 'pred'])
+        # Cost computation
+        cost = 0
+        nfails = 0
+        slack = 0
+        for mcn, gtmp in tmp.groupby('machine'):
+            idx = np.nonzero(gtmp['pred'].values < thr)[0]
+            if len(idx) == 0:
+                cost += self.maintenance_cost
+                nfails += 1
+            else:
+                cost -= max(0, idx[0] - self.safe_interval)
+                slack += len(gtmp) - idx[0]
+        if not return_margin:
+            return cost
+        else:
+            return cost, nfails, slack
+            
 class MLPRegressor(keras.Model):
     def __init__(self, input_shape, hidden=[]):
         super(MLPRegressor, self).__init__()
@@ -209,8 +238,8 @@ class LagDualRULRegressor(MLPRegressor):
         # Weights
         # self.alpha = tf.Variable(0., name='alpha')
         self.beta = tf.Variable(0., name='beta')
-        # self.alpha = 1
-        self.alpha = tf.Variable(0., name='alpha')
+        self.alpha = 1
+        # self.alpha = tf.Variable(0., name='alpha')
         # self.beta = 5
         self.maxrul = maxrul
         # Loss trackers
@@ -253,9 +282,8 @@ class LagDualRULRegressor(MLPRegressor):
 
         # Separate training variables
         tr_vars = self.trainable_variables
-        wgt_vars = tr_vars[:-2]
-        mul_vars = tr_vars[-2:]
-        rgl_vars = tr_vars[-2:-1]
+        wgt_vars = tr_vars[:-1]
+        mul_vars = tr_vars[-1:]
 
         grads = tape.gradient(loss, wgt_vars)
         self.optimizer.apply_gradients(zip(grads, wgt_vars))
@@ -263,15 +291,8 @@ class LagDualRULRegressor(MLPRegressor):
         with tf.GradientTape() as tape:
             loss, mse, cst = self.__custom_loss(x, y_true, sign=-1)
 
-        grads = tape.gradient(loss, rgl_vars)
+        grads = tape.gradient(loss, mul_vars)
         self.optimizer.apply_gradients(zip(grads, mul_vars))
-        
-        
-        with tf.GradientTape() as tape:
-            loss, mse, cst = self.__custom_loss(x, y_true, sign=-1)
-        
-        grads = tape.gradient(loss, rgl_vars)
-        self.optimizer.apply_gradients(zip(grads, rgl_vars))
 
 
         # Track the loss change
@@ -287,3 +308,4 @@ class LagDualRULRegressor(MLPRegressor):
         return [self.ls_tracker,
                 self.mse_tracker,
                 self.cst_tracker]
+

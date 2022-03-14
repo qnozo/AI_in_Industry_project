@@ -59,7 +59,6 @@ def partition_by_machine(data, tr_machines):
         ts_data = pd.DataFrame(columns=tr_data.columns)
     return tr_data, ts_data
 
-
 def plot_rul(pred=None, target=None,
         stddev=None,
         q1_3=None,
@@ -88,3 +87,18 @@ def plot_rul(pred=None, target=None,
                     alpha=0.3, color='tab:blue', label='1st/3rd quartile')
     plt.legend()
     plt.tight_layout()
+
+def opt_threshold_and_plot(machine, pred, th_range, cmodel,
+        plot=True, figsize=figsize, autoclose=True):
+    # Compute the optimal threshold
+    costs = [cmodel.cost(machine, pred, thr) for thr in th_range]
+    opt_th = th_range[np.argmin(costs)]
+    # Plot
+    if plot:
+        if autoclose:
+            plt.close('all')
+        plt.figure(figsize=figsize)
+        plt.plot(th_range, costs)
+        plt.tight_layout()
+    # Return the threshold
+    return opt_th
