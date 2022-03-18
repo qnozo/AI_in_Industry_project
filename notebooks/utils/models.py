@@ -1,6 +1,3 @@
-import imp
-
-
 import tensorflow as tf
 from tensorflow import keras
 from tensorflow.keras import layers
@@ -49,8 +46,6 @@ class MLPRegressor(keras.Model):
         for layer in self.lrs:
             x = layer(x)
         return x
-
-
 
 class CstBatchGenerator(tf.keras.utils.Sequence):
     def __init__(self, data, in_cols, batch_size=32, seed=42):
@@ -183,12 +178,12 @@ class CstRULRegressor(MLPRegressor):
                 self.cst_tracker]
 
 class LagDualRULRegressor(MLPRegressor):
-    def __init__(self, input_shape, maxrul, hidden=[], alpha=1):
+    def __init__(self, input_shape, maxrul, hidden=[]):
         super(LagDualRULRegressor, self).__init__(input_shape, hidden)
         # Weights
         self.beta = tf.Variable(0., name='beta')
         # self.beta = 5
-        self.alpha = alpha
+        # self.alpha = 1
         # self.beta = 5
         self.maxrul = maxrul
         # Loss trackers
@@ -210,7 +205,7 @@ class LagDualRULRegressor(MLPRegressor):
         delta_rul = -(self.idx[1:] - self.idx[:-1]) / self.maxrul
         deltadiff = delta_pred - delta_rul
         cst = k.mean(k.square(deltadiff))
-        loss = self.alpha * mse + self.beta * cst
+        loss = mse + self.beta * cst
         return sign*loss, mse, cst
 
     def train_step(self, data):
@@ -247,3 +242,7 @@ class LagDualRULRegressor(MLPRegressor):
                 self.mse_tracker,
                 self.cst_tracker]
 
+def build_model(Model, loss, *params):
+    model = Model(*params)
+    model.compile(optimizer='Adam', loss=loss, run_eagerly=False)
+    return model

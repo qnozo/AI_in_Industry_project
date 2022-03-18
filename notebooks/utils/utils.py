@@ -1,3 +1,4 @@
+from ctypes import util
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
@@ -102,3 +103,58 @@ def opt_threshold_and_plot(machine, pred, th_range, cmodel,
         plt.tight_layout()
     # Return the threshold
     return opt_th
+
+def supervised_unsupervised_split(dt, trs_ratio=0.03, tru_ratio=0.75, random_state=32 ,verbose=0): 
+    np.random.seed(32)
+    machines = dt.machine.unique()
+    np.random.shuffle(machines)
+    
+    sep_trs = int(trs_ratio * len(machines))
+    sep_tru = int(tru_ratio * len(machines))
+    
+    trs_mcn = list(machines[:sep_trs])
+    tru_mcn = list(machines[sep_trs:sep_trs+sep_tru])
+    ts_mcn = list(machines[sep_trs+sep_tru:])
+    tr, ts = partition_by_machine(dt, trs_mcn + tru_mcn)
+    trs, tru = partition_by_machine(tr, trs_mcn)
+    if verbose:
+        print(f'Num. machine: {len(trs_mcn)} (supervised), {len(tru_mcn)} (unsupervised), {len(ts_mcn)} (test)')
+    return tr, ts, trs, tru
+
+def standardize(dt, columns, mean, std):
+    dt_copy = dt.copy()
+    dt_copy[columns] = (dt_copy[columns] - mean) / std
+    return dt_copy
+
+def normalize(dt, trmaxrul):
+    dt_copy = dt.copy()
+    dt_copy['rul'] = dt_copy['rul'] / trmaxrul
+    return dt_copy
+
+def standardize_and_normalize(ts, tr, trs, tru, dt_in):
+    mean = tr[dt_in].mean()
+    std = tr[dt_in].std().replace(to_replace=0, value=1)
+
+    ts_s = standardize(ts, dt_in, mean, std)
+    tr_s = standardize(trs, dt_in, mean, std)
+    trs_s = standardize(trs, dt_in, mean, std)
+    tru_s = standardize(tru, dt_in, mean, std)
+
+    trmaxrul = tr['rul'].max()
+
+    ts_s = normalize(ts_s, trmaxrul)
+    tr_s = normalize(tr_s, trmaxrul)
+    trs_s = normalize(trs_s, trmaxrul)
+    tru_s = normalize(tru_s, trmaxrul)
+
+    return ts_s, tr_s, trs_s, tru_s, trmaxrul
+
+def cut_off(tru_s):
+    tru_s_by_m = split_by_field(tru_s, 'machine')
+    np.random.seed(42)
+    for mcn, tmp in tru_s_by_m.items():
+        cutoff = int(np.random.randint(10, 50, 1))
+        tru_s_by_m[mcn] = tmp.iloc[:-cutoff]
+    tru_st = pd.concat(tru_s_by_m.values())
+    return tru_st
+
