@@ -1,4 +1,4 @@
-from ctypes import util
+
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
@@ -43,11 +43,11 @@ def split_by_field(data, field):
         res[fval] = gdata
     return res
 
-def partition_by_machine(data, tr_machines):
+def partition_by_machine(data, tr_machines, field='machine'):
     # Separate
     tr_machines = set(tr_machines)
     tr_list, ts_list = [], []
-    for mcn, gdata in data.groupby('machine'):
+    for mcn, gdata in data.groupby(field):
         if mcn in tr_machines:
             tr_list.append(gdata)
         else:
@@ -88,6 +88,7 @@ def plot_rul(pred=None, target=None,
                     alpha=0.3, color='tab:blue', label='1st/3rd quartile')
     plt.legend()
     plt.tight_layout()
+    plt.show()
 
 def opt_threshold_and_plot(machine, pred, th_range, cmodel,
         plot=True, figsize=figsize, autoclose=True):
@@ -101,6 +102,7 @@ def opt_threshold_and_plot(machine, pred, th_range, cmodel,
         plt.figure(figsize=figsize)
         plt.plot(th_range, costs)
         plt.tight_layout()
+        plt.show()
     # Return the threshold
     return opt_th
 
@@ -123,13 +125,12 @@ def supervised_unsupervised_split(dt, trs_ratio=0.03, tru_ratio=0.75, random_sta
 
 def standardize(dt, columns, mean, std):
     dt_copy = dt.copy()
-    dt_copy[columns] = (dt_copy[columns] - mean) / std
+    dt_copy[columns] = (dt[columns] - mean) / std
     return dt_copy
 
 def normalize(dt, trmaxrul):
-    dt_copy = dt.copy()
-    dt_copy['rul'] = dt_copy['rul'] / trmaxrul
-    return dt_copy
+    return dt['rul'] / trmaxrul
+    
 
 def standardize_and_normalize(ts, tr, trs, tru, dt_in):
     mean = tr[dt_in].mean()
@@ -142,10 +143,10 @@ def standardize_and_normalize(ts, tr, trs, tru, dt_in):
 
     trmaxrul = tr['rul'].max()
 
-    ts_s = normalize(ts_s, trmaxrul)
-    tr_s = normalize(tr_s, trmaxrul)
-    trs_s = normalize(trs_s, trmaxrul)
-    tru_s = normalize(tru_s, trmaxrul)
+    ts_s['rul'] = normalize(ts, trmaxrul)
+    tr_s['rul'] = normalize(tr, trmaxrul)
+    trs_s['rul'] = normalize(trs, trmaxrul)
+    tru_s['rul'] = normalize(tru, trmaxrul)
 
     return ts_s, tr_s, trs_s, tru_s, trmaxrul
 
