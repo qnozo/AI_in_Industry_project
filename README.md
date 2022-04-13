@@ -29,7 +29,7 @@ To simulate the scarcity of the data at various level, we define a series of rat
 
 ### Experiments
 
-**four model**
+**four models**
 
 * First model is the baseline model.
 
@@ -39,9 +39,9 @@ To simulate the scarcity of the data at various level, we define a series of rat
 
 * Fourth model applies both the approaches but it has multiple penalty term.
 
+### Evaluation
 
-
-
+The goal of RUL estimation is not to achieve the best possible accuracy but to save as much as possible.money as possible by delaying the maintenance operation when they are really needed. So, for a proper evaluation of our model we need to define a cost model.
 
 
 
