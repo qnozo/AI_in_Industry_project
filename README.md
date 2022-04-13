@@ -31,13 +31,13 @@ To simulate the scarcity of the data at various level, we define a series of rat
 
 **four model**
 
-** First model is the baseline model.
+* First model is the baseline model.
 
-** Second model applies the semantic-based regularizer with a fixed constraint equal to 1.
+* Second model applies the semantic-based regularizer with a fixed constraint equal to 1.
 
-** Third model applies both the semantic-based regulazer and the penalty term is chosen using the Lagrangian Dual Framework. It has a single penalty term computed on the average of all the constraint.
+* Third model applies both the semantic-based regulazer and the penalty term is chosen using the Lagrangian Dual Framework. It has a single penalty term computed on the average of all the constraint.
 
-** Fourth model applies both the approaches but it has multiple penalty term.
+* Fourth model applies both the approaches but it has multiple penalty term.
 
 
 
