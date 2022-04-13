@@ -7,8 +7,7 @@ In the recent years, industries such as aeronautical, railway, and petroleum has
 
 ### Dataset
 
-Commercial Modular Aero-Propulsion System Simulation (C-MAPSS), which was developedby NASA. The CMAPSS dataset includes 4 sub-datasets that are composed of multi-variate temporal data obtained from 21 sensors. Each sub-dataset contains one training set and one test set. The training datasets include run-to-failure sensor records of multiple aero-engines collected under different operational conditions and fault modes. Each engine unit starts with different degrees of initial wear and manufacturing variation that is unknown and considered to be healthy. As time progresses, the engine units begin to degrade until they reach the system failures, i.e. the last data entry corresponds to the time cycle that the engine unit is declared unhealthy. On the other hand, the sensor records in the testing datasets terminate at some
-time before system failure, and the goal of this task is to estimate the remaining useful life of each engine in the test dataset. For verification, the actual RUL value for the testing engine units are also provided.
+Commercial Modular Aero-Propulsion System Simulation (C-MAPSS), which was developedby NASA. The CMAPSS dataset includes 4 sub-datasets that are composed of multi-variate temporal data obtained from 21 sensors. Each sub-dataset contains one training set and one test set. The training datasets include run-to-failure sensor records of multiple aero-engines collected under different operational conditions and fault modes.
 
 | Dataset               | FD001        | FD002 | FD003        | FD004    | 
 | :--------------------:| :-----------:| :----:| :-----------:| :-------:|
@@ -27,4 +26,23 @@ To simulate the scarcity of the data at various level, we define a series of rat
 | 23%/ 55% |              57/13367            |              136/33651             |     56/14231    |
 | 43%/ 35% |              107/25853           |              87/21505              |     55/13891    |
 | 63%/ 15% |              156/38215           |              37/8803               |     56/14231    |
+
+### Experiments
+
+**four model**
+
+** First model is the baseline model.
+
+** Second model applies the semantic-based regularizer with a fixed constraint equal to 1.
+
+** Third model applies both the semantic-based regulazer and the penalty term is chosen using the Lagrangian Dual Framework. It has a single penalty term computed on the average of all the constraint.
+
+** Fourth model applies both the approaches but it has multiple penalty term.
+
+
+
+
+
+
+
 
