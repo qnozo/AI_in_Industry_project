@@ -22,7 +22,7 @@ time before system failure, and the goal of this task is to estimate the remaini
 To simulate the scarcity of the data at various level, we define a series of ratios in which the data set will be splitted in supervised training set, unsupervised training set and test set. The partitions are defined by the mean of the machines, in this way we maintain together the sample about the same machine. The size of the test set is fixed to 12% for all the experiments. The below table shows how we have partitioned the data set.
 
 |     %    | no.of supervised machine/samples | no.of unsupervised machine/samples | machine/samples |
-| ---------| ---------------------------------| -----------------------------------| ----------------|
+| ---------| :-------------------------------:| -----------------------------------| ----------------|
 | 3%/ 75%  |              7/1548              |              186/45470             |     56/14231    |
 | 23%/ 55% |              57/13367            |              136/33651             |     56/14231    |
 | 43%/ 35% |              107/25853           |              87/21505              |     55/13891    |
