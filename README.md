@@ -49,5 +49,7 @@ In this project we have applied a semi-supervised approach for estimating the Re
 
 # Authors
 Davide Angelani
-Yellam naidu Kottavalasa
-Usha padma Rachakonda
+
+Yellam Naidu Kottavalasa
+
+Usha Padma Rachakonda
