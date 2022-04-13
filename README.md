@@ -39,10 +39,6 @@ To simulate the scarcity of the data at various level, we define a series of rat
 
 * Fourth model applies both the approaches but it has multiple penalty term.
 
-### Evaluation
-
-The goal of RUL estimation is not to achieve the best possible accuracy but to save as much as possible.money as possible by delaying the maintenance operation when they are really needed. So, for a proper evaluation of our model we need to define a cost model.
-
 ### Conclusion
 
 In this project we have applied a semi-supervised approach for estimating the Remain Useful Life. The approach looks promising when used with a small quantity of supervised data. The problem is the high average of remaining days to the end-of-life for each machine, predicted by the model on which we have applied the regularizer. This is probably due to the too strictly satisfaction of the constraints but it needs further investigation.
