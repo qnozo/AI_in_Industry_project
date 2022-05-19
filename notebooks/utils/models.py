@@ -48,11 +48,11 @@ class MLPRegressor(keras.Model):
         return x
 
 class CstBatchGenerator(tf.keras.utils.Sequence):
-    def __init__(self, data, in_cols, batch_size=32, seed=42):
+    def __init__(self, data, in_cols, batch_size=32, seed=42, field="machine"):
         super(CstBatchGenerator).__init__()
         self.data = data
         self.in_cols = in_cols
-        self.dpm = utils.split_by_field(data, 'machine')
+        self.dpm = utils.split_by_field(data, field)
         self.rng = np.random.default_rng(seed)
         self.batch_size = batch_size
         # Build the first sequence of batches
