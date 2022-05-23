@@ -106,9 +106,9 @@ def opt_threshold_and_plot(machine, pred, th_range, cmodel,
     # Return the threshold
     return opt_th
 
-def supervised_unsupervised_split(dt, trs_ratio=0.03, tru_ratio=0.75, random_state=32 ,verbose=0): 
+def supervised_unsupervised_split(dt, trs_ratio=0.03, tru_ratio=0.75, random_state=32 ,verbose=0, field="machine"): 
     np.random.seed(32)
-    machines = dt.machine.unique()
+    machines = dt[field].unique()
     np.random.shuffle(machines)
     
     sep_trs = int(trs_ratio * len(machines))
@@ -117,8 +117,8 @@ def supervised_unsupervised_split(dt, trs_ratio=0.03, tru_ratio=0.75, random_sta
     trs_mcn = list(machines[:sep_trs])
     tru_mcn = list(machines[sep_trs:sep_trs+sep_tru])
     ts_mcn = list(machines[sep_trs+sep_tru:])
-    tr, ts = partition_by_machine(dt, trs_mcn + tru_mcn)
-    trs, tru = partition_by_machine(tr, trs_mcn)
+    tr, ts = partition_by_machine(dt, trs_mcn + tru_mcn, field)
+    trs, tru = partition_by_machine(tr, trs_mcn, field)
     if verbose:
         print(f'Num. machine: {len(trs_mcn)} (supervised), {len(tru_mcn)} (unsupervised), {len(ts_mcn)} (test)')
     return tr, ts, trs, tru
