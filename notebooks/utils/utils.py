@@ -150,8 +150,8 @@ def standardize_and_normalize(ts, tr, trs, tru, dt_in):
 
     return ts_s, tr_s, trs_s, tru_s, trmaxrul
 
-def cut_off(tru_s):
-    tru_s_by_m = split_by_field(tru_s, 'machine')
+def cut_off(tru_s, field="machine"):
+    tru_s_by_m = split_by_field(tru_s, field)
     np.random.seed(42)
     for mcn, tmp in tru_s_by_m.items():
         cutoff = int(np.random.randint(10, 50, 1))
